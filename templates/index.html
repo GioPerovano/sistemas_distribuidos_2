@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sincronização RBS</title>
+    <link rel="icon" href="../static/icon.png" type="image/png">
+
+    <style>
+        
+        li, p{
+            font-weight: normal;
+        }
+
+        body, #ajuste_alerta {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            font-size: 1.2em;
+            background-image: url('../static/background.png'); /* Coloque o caminho da sua imagem aqui */
+            background-size: cover; /* Faz a imagem cobrir toda a tela */
+            background-position: center; /* Centraliza a imagem */
+            background-attachment: fixed; /* Faz a imagem ficar fixa enquanto você rola a página */
+            height: 100vh; /* Faz o corpo da página ter altura total */
+        }
+        h2, h3, h4, #topics, ul {
+            text-align: left;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 1em;
+            font-size:1.2em;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 20%;
+            height: auto;
+            font-weight: bold;
+            background-color: rgb(79, 79, 153);
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: rgb(17, 17, 126);
+        }
+
+        .programa {
+            border: 2px solid black;            
+            padding: 30px;
+            margin: 23px auto;
+            display: inline-block;
+            font-size: 1.35em;
+            border-radius: 1em;
+        }
+
+        #ajuste_alerta {
+            color: red;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 1em;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            button {
+                width: 50%;
+            }
+
+            .programa {
+                font-size: 1.1em;
+                padding: 10px;
+            }
+
+            #topics {
+                font-size: 1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                font-size: 0.9em;
+            }
+
+            h1 {
+                font-size: 1.2em;
+            }
+
+            h2 {
+                font-size: 1em;
+            }
+
+            button {
+                width: 70%;
+            }
+
+            .programa {
+                font-size: 1em;
+                padding: 8px;
+            }
+
+            #topics {
+                font-size: 0.9em;
+            }
+
+            #ajuste_alerta {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>⏳ Sincronização em Broadcast de Referência (RBS) ⏳</h1> <br>
+    <h2>📌 Resumo do Projeto </h2>
+    <p>Este projeto implementa a Sincronização em Broadcast de Referência (RBS), um algoritmo que sincroniza relógios em sistemas distribuídos. O servidor Flask recebe requisições de clientes e registra o tempo de chegada, calculando uma média para detectar atrasos e sugerir ajustes, pelo cálculo do tempo de ida e volta das requisições. Sincronize e veja!</p>
+
+    <h4>🤔 O que é Sincronização RBS?</h4>
+    <p>O Reference Broadcast Synchronization (RBS) permite sincronizar vários dispositivos sem precisar de um relógio central. O servidor envia sinais de referência, e os clientes usam esses sinais para ajustar seus relógios</p>
+
+    <h4>🔎 Como Funciona?</h4>
+    <p id="topics" style="padding-left: 1.5em;">
+        1️⃣ O cliente acessa o <b>/sync </b>e envia uma requisição ao servidor.<br>
+        2️⃣ O servidor registra o tempo de chegada <br>
+        3️⃣ O servidor calcula a <b>média</b>dos tempos recebidos. <br>
+        4️⃣ O tempo de saída é registrado com a <b>resposta</b> da requisição. <br>
+        5️⃣ <b>O servidor retorna os valores processados, incluindo um ajuste e alerta sugerido se houver um atraso significativo. ❗ 
+    </p> <br> <br>
+
+    <h2>👥 GRUPO 1.3 👥</h2>
+    <ul>
+        <li>Giovanna Perovano e Silva - 202211190022</li>
+        <li>João Henrique de Jesus Silva - 202211190026</li>
+    </ul> <br>
+
+    <h2>🖥️ PROGRAMA 🖥️</h2>
+    <div class="programa">
+        <p><strong>Mensagem:</strong> <span id="mensagem"></span></p>
+        <p><strong>Tempo de Chegada:</strong> <span id="tempo_chegada"></span></p>
+        <p><strong>Tempo de Saída:</strong> <span id="tempo_saida"></span></p>
+        <p><strong>Diferença de Tempo:</strong> <span id="diferenca"></span></p>
+        <p><strong>Média de Sincronização:</strong> <span id="media"></span></p>
+    </div>
+
+    <p id="ajuste_alerta" style="color: red; display: none;">
+        ⚠️ Seu relógio pode estar atrasado! Hora sugerida: <span id="tempo_sugerido"></span>
+    </p>
+
+    <br>
+    <button class="sync-button" onclick="sincronizar()">SINCRONIZAR 🔄</button> <br>
+
+    <script>
+        let cliques = 0;
+
+        function sincronizar() {
+            cliques++;
+
+            fetch('/sync')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("mensagem").innerText = data.mensagem;
+                document.getElementById("tempo_chegada").innerText = data.tempo_chegada;
+                document.getElementById("tempo_saida").innerText = data.tempo_saida;
+                document.getElementById("media").innerText = data.media_sincronizacao  + " segundos";
+                document.getElementById("diferenca").innerText = data.diferenca_tempo  + " segundos";
+
+                if (data.ajuste_necessario) {
+                    document.getElementById("ajuste_alerta").style.display = "block";
+                    document.getElementById("tempo_sugerido").innerText = data.tempo_sugerido;
+                } else {
+                    document.getElementById("ajuste_alerta").style.display = "none";
+                }
+
+                if (cliques === 15) {
+                    alert("A média está menor! Você percebeu? 🤔 \n\nIsso ocorre pois com uma maior quantidade de valores armazenados, a média cada vez mais se aproxima do valor exato.");
+                }
+            })
+            .catch(error => console.error('Erro na sincronização:', error));
+        }
+    </script>
+</body>
+</html>
