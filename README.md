@@ -27,7 +27,6 @@ Com essa abordagem, os clientes podem verificar a precisão de seus relógios e 
 ├── 📁 templates        # Arquivo HTML
 │   ├── index.html      # Interface principal já com CSS e JavaScript
 ├── app.py              # Servidor Flask
-├── requirements.txt    # Dependências do projeto
 ├── README.md           # Documentação
 ```
 
