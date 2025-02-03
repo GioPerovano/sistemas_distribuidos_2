@@ -4,7 +4,8 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-tempos = []  # Lista para armazenar os tempos de chegada
+tempos_chegada = []  # Lista para armazenar os tempos de chegada
+diferencas_tempo = []  # Lista para armazenar as diferenças
 LIMITE_AJUSTE = 0.1  # Limite para sugerir ajuste (100ms)
 
 def formatar_tempo(timestamp):
@@ -18,20 +19,21 @@ def index():
 
 @app.route('/sync', methods=['GET'])
 def sincronizar():
-    tempo_chegada = time.time()  # Captura o tempo exato de chegada com alta precisão
-    tempos.append(tempo_chegada)
+    tempo_chegada = time.time()  # Captura o tempo de chegada
+    tempos_chegada.append(tempo_chegada)
 
-    # Cálculo da média: diferença entre os tempos consecutivos
-    if len(tempos) > 1:
-        diferencas = [tempos[i] - tempos[i - 1] for i in range(1, len(tempos))]
-        media_sincronizacao = sum(diferencas) / len(diferencas)
-    else:
-        media_sincronizacao = 0  # Primeira sincronização, sem referência
+    time.sleep(0.000000000000000000000000000000000000000001)
 
-    tempo_saida = time.time()  # Tempo de saída ao responder
+    tempo_saida = time.time()  # Captura o tempo de saída
+
+    # Calcula a diferença real entre tempo de chegada e saída
+    diferenca = tempo_saida - tempo_chegada
+    diferencas_tempo.append(diferenca)
+
+    # Calcula a média das diferenças registradas
+    media_sincronizacao = sum(diferencas_tempo) / len(diferencas_tempo) if diferencas_tempo else 0
 
     # Verifica se o ajuste é necessário
-    diferenca = abs(tempo_chegada - tempo_saida)
     ajuste_necessario = diferenca > LIMITE_AJUSTE
 
     return jsonify({
@@ -39,7 +41,7 @@ def sincronizar():
         "tempo_chegada": formatar_tempo(tempo_chegada),
         "tempo_saida": formatar_tempo(tempo_saida),
         "media_sincronizacao": f"{media_sincronizacao:.10f}",
-        "diferenca_tempo": f"{diferenca:.10f}",  # Diferença com 10 casas decimais
+        "diferenca_tempo": f"{diferenca:.10f}",
         "ajuste_necessario": ajuste_necessario,
         "tempo_sugerido": formatar_tempo(tempo_chegada + media_sincronizacao) if ajuste_necessario else None
     })
